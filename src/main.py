@@ -1,6 +1,6 @@
 
-
-from csv import writer
+from openpyxl import load_workbook
+from openpyxl.chart import BarChart, Reference
 import os
 import pandas as pd
 
@@ -62,13 +62,13 @@ print("\nStarting Data Cleaning....")
 #Treat empty strings as missing values
 df=df.replace("",pd.NA)
 
-#1. Convert Order Date to proper format
-df["OrderDate"]=pd.to_datetime(df["Order Date"], errors="coerce")
+#1. Convert numeric columns
+df["Units Sold"]=pd.to_numeric(df["Units Sold"])
+df["Unit Price"]=pd.to_numeric(df["Unit Price"])
+df["Total Sales"]=pd.to_numeric(df["Total Sales"])
 
-#2. Convert numeric columns
-df["Units Sold"]=pd.to_numeric(df["Units Sold"], errors="coerce")
-df["Unit Price"]=pd.to_numeric(df["Unit Price"], errors="coerce")
-df["Total Sales"]=pd.to_numeric(df["Total Sales"], errors="coerce")
+#2. Convert Order Date to proper format
+df["OrderDate"]=pd.to_datetime(df["Order Date"], errors="coerce")
 
 #3. Fill missing values
 df["Sales Person"]=df["Sales Person"].fillna("Unknown")
@@ -108,21 +108,68 @@ summary_df=pd.DataFrame({
 
 #Region-wise Report
 region_df=df.groupby("Region", as_index=False)["Total Sales"].sum()
+region_df=region_df.sort_values(by="Total Sales", ascending=False)
 
 #Product-wise Report
 product_df=df.groupby("Product", as_index=False)["Total Sales"].sum()
+product_df=product_df.sort_values(by="Total Sales", ascending=False)
 
 #Sales Person Report
 salesperson_df=df.groupby("Sales Person", as_index=False)["Total Sales"].sum()
+salesperson_df=salesperson_df.sort_values(by="Total Sales", ascending=False)
 
-#Write to Excel
-with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
+#Top performer
+top_sales_person=salesperson_df.iloc[0]
+
+print("\nTop Sales Person:")
+print(top_sales_person)
+
+#Write sheets first
+with pd.ExcelWriter(output_file, engine="openpyxl", mode="w") as writer:
     df.to_excel(writer, sheet_name="Cleaned Data", index=False)
     summary_df.to_excel(writer, sheet_name="Summary", index=False)
-    region_df.to_excel(writer, sheet_name="Region-wise", index=False)
-    product_df.to_excel(writer, sheet_name="Product-wise", index=False)
+    region_df.to_excel(writer, sheet_name="Region Report", index=False)
+    product_df.to_excel(writer, sheet_name="Product Report", index=False)
     salesperson_df.to_excel(writer, sheet_name="Sales Person-wise", index=False)
 
-print(f"\nReport generated successfully: {output_file}")
+#Load workbook again to add charts
+wb=load_workbook(output_file)
+
+#Region chart
+ws_region=wb["Region Report"]
+
+chart1=BarChart()
+chart1.title="Sales by Region"
+chart1.y_axis.title="Total Sales"
+chart1.x_axis.title="Region"
+
+data1= Reference(ws_region, min_col=2, min_row=1, max_row=len(region_df)+1)
+cats1= Reference(ws_region, min_col=1, min_row=2, max_row=len(region_df)+1)
+
+chart1.add_data(data1, titles_from_data=True)
+chart1.set_categories(cats1)
+
+ws_region.add_chart(chart1, "E2")
+
+#Product chart
+ws_product=wb["Product Report"]
+
+chart2=BarChart()
+chart2.title="Sales by Product"
+chart2.y_axis.title="Total Sales"
+chart2.x_axis.title="Product"
+
+data2= Reference(ws_product, min_col=2, min_row=1, max_row=len(product_df)+1)
+cats2= Reference(ws_product, min_col=1, min_row=2, max_row=len(product_df)+1)
+
+chart2.add_data(data2, titles_from_data=True)
+chart2.set_categories(cats2)
+
+ws_product.add_chart(chart2, "E2")
+
+#Save final workbook
+wb.save(output_file)
+
+print(f"\nReport generated successfully with charts: {output_file}")
 
 
