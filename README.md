@@ -12,12 +12,12 @@ This project automates data cleaning, analysis, and generates professional Excel
 - Region-wise, Product-wise, and Salesperson-wise analysis
 - Bar chart visualizations using OpenPyXL
 
-## Technologies Used:
+## Technologies Used
 
--Python
--Pandas
--OpenPyXL
--VS Code
+- Python
+- Pandas
+- OpenPyXL
+- VS Code
 
 ## Screenshots
 
@@ -30,20 +30,19 @@ This project automates data cleaning, analysis, and generates professional Excel
 ### 📊 Summary Report
 ![Summary](screenshots/summary.png)
 
-
 ## Project Structure
 
 automated-data-reporting-system/
 │
 ├── data/
-│   └── sales_data.csv      # Raw input data
+│   └── sales_data.csv  # Raw input data
 │
-├── output/
-│   └── sales_report.xlsx   # Generated reports
+├── screenshots/
 │
 ├── src/
-│   └── main.py             # Main script
+│   └── main.py         # Main script
 │
+├── .gitignore
 └── README.md
 
 ## How to Run
